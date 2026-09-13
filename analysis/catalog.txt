@@ -1,0 +1,29 @@
+================================================================================
+PE CATALOG: mtm/game  (3 binaries)
+================================================================================
+
+================================================================================
+  APP
+================================================================================
+
+  [Monster.exe]  2,925,568 bytes
+  SHA1: f4fbce51d5ab14699ad2df4c0f45d994907b6d23
+  PE32 EXE (x86), GUI, linker 3.10, built 1998-07-14 21:33:03 UTC
+  overlay:95,232B
+  imports: DPLAYX.dll, WINMM.dll, smackw32.dll, DDRAW.dll, DSOUND.dll, IMM32.dll, DINPUT.dll, MSACM32.dll, KERNEL32.dll, USER32.dll, GDI32.dll, comdlg32.dll, WINSPOOL.DRV, ADVAPI32.dll, SHELL32.dll, COMCTL32.dll
+
+================================================================================
+  PLUGIN/LIB
+================================================================================
+
+  [TRID3D.DLL]  80,896 bytes
+  SHA1: 3316242077fc379220395759c0492cb0baf382cb
+  PE32 DLL (x86), GUI, linker 3.10, built 1998-03-25 22:32:08 UTC
+  overlay:5,120B, exports:27
+  imports: KERNEL32.dll, USER32.dll, DDRAW.dll
+
+  [VOXRT24.DLL]  248,080 bytes
+  SHA1: 110cc2ce9f3ba9fd3b5b9f7704ad9301bbe5491d
+  PE32 DLL (x86), GUI, linker 5.0, built 1997-08-13 11:08:11 UTC
+  overlay:272B, exports:8
+  imports: MSVCRT.dll, KERNEL32.dll
