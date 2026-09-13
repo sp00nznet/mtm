@@ -1,0 +1,63 @@
+# Build artifacts
+build/
+out/
+cmake-build-*/
+*.obj
+*.o
+*.lib
+*.pdb
+*.ilk
+*.exp
+*.a
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+CMakeSettings.json
+CMakeUserPresets.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Scratch / regeneratable analysis output
+work/
+gen/
+*.asm
+*.json.bak
+
+# --- Original retail files: NOT redistributed in this repo ---
+# Monster Truck Madness (c) 1996 and Monster Truck Madness 2 (c) 1998,
+# Microsoft / Terminal Reality. In copyright.
+# Bring your own copy and drop it in original/ yourself; the pipeline reads it
+# from there. Everything under game/ and disc/ is unpacked from that copy and
+# is equally not ours to ship.
+original/
+game/
+disc/
+extracted/
+*.iso
+*.ISO
+*.bin
+*.BIN
+*.cue
+*.img
+*.exe
+*.EXE
+*.dll
+*.DLL
+*.ModuleDLL
+*.zip
+*.7z
+*.rar
+*.cab
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
