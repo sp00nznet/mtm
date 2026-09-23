@@ -61,3 +61,8 @@ extracted/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Lifted output: a derivative work of the original binary, never committed
+src/recomp/
+src/seg*.c
+RecompiledFuncs/

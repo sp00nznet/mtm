@@ -22,20 +22,23 @@ SOFTWARE.
 
 ---
 
-This licence covers what is actually ours in this repository: the pipeline
-driver, the Win16 runtime and shims, the tools, the build files and the
-documentation. It does NOT cover Bang! Bang! itself.
+Scope
 
-Bang! Bang! (1990) is a Windows 3.0 cannon-fire game and is not ours to
-license. Its executable, help file, resources and art are not in this
-repository and are excluded by .gitignore. Shareware is not public domain: a
-1990 shareware release still carries its author's copyright.
+This licence covers what is actually ours in this repository: the
+documentation, the analysis notes and whatever tools, runtime and build files
+are added later. It does NOT cover either game.
+
+Monster Truck Madness is (c) 1996, and Monster Truck Madness 2 (c) 1998,
+Microsoft / Terminal Reality, both in copyright. Neither is ours to license.
+Their executables, data files and art are not in this repository and are
+excluded by .gitignore.
 
 Two consequences worth being explicit about:
 
-  * You need your own copy of BANGBANG.EXE to use any of this. Drop it in
+  * You need your own copy of the game to use any of this. Drop it in
     original/ and the pipeline reads it from there.
 
-  * Lifted code is a derivative work of the binary it came from. Anything this
-    pipeline emits into src/recomp/ carries whatever licence the original
-    carries, not this one. The MIT grant above stops at the tools.
+  * Lifted code is a derivative work of the binary it came from. Anything the
+    pcrecomp pipeline emits for this project carries whatever licence
+    the original carries, not this one, and is never committed here. The MIT grant
+    above stops at our own work.

@@ -5,10 +5,16 @@ Reality, 1996) and **Monster Truck Madness 2** (1998) from their shipping Win32
 binaries to native C.
 
 Built on the [pcrecomp](https://github.com/sp00nznet/pcrecomp) toolchain, and
-directly on [fury3](https://github.com/sp00nznet/fury3) and `hellbender` — same
+directly on [fury3](https://github.com/sp00nznet/fury3) and
+[hellbender](https://github.com/sp00nznet/hellbender) — same
 engine house, two years later.
 
 ## Project Status: **P0 complete, P1 not started**
+
+Reconnaissance only. Nothing has been lifted, and nothing builds or runs yet.
+What is here is the P0 write-up and `analysis/`. Every binary is 32-bit PE, so
+this goes through pcrecomp's 32-bit path (`disasm32` → `lift32` →
+`runtime/recomp32/`), not the x86-64 one.
 
 ---
 
@@ -71,7 +77,7 @@ compressed cabinets) and has not been unpacked yet.
 
 ## Where it goes next (P1)
 
-1. `disasm/disasm32.py` over `VOXRT24.DLL` first. Small, self-contained, and
+1. `tools/disasm/disasm32.py` over `VOXRT24.DLL` first. Small, self-contained, and
    directly comparable against the voxel code already lifted in `fury3`.
 2. Classify the CRT out of `Monster.exe` before disassembling it.
 3. Unpack MTM1's ACME cabinets and check whether its renderer is a separate DLL
@@ -94,3 +100,7 @@ mtm/
 Monster Truck Madness © 1996 and Monster Truck Madness 2 © 1998, Microsoft /
 Terminal Reality. This project neither contains nor distributes any part of
 them.
+
+The code and documentation here are MIT; [LICENSE](LICENSE) spells out that
+the grant stops at our own work and does not reach the game or anything
+lifted from it.
