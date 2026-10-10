@@ -1,106 +1,110 @@
 # Monster Truck Madness — Static Recompilation
 
-Static recompilation of **Monster Truck Madness** (Microsoft / Terminal
-Reality, 1996) and **Monster Truck Madness 2** (1998) from their shipping Win32
-binaries to native C.
+Static recompilation of **Monster Truck Madness 2** (Microsoft / Terminal
+Reality, 1998) from its shipping Win32 binary to native C, on the
+[pcrecomp](https://github.com/sp00nznet/pcrecomp) toolchain. Monster Truck
+Madness 1 (1996) is next, once MTM2 races.
 
-Built on the [pcrecomp](https://github.com/sp00nznet/pcrecomp) toolchain, and
-directly on [fury3](https://github.com/sp00nznet/fury3) and
-[hellbender](https://github.com/sp00nznet/hellbender) — same
-engine house, two years later.
+Part of the pcrecomp collection and its shared house style; siblings from the
+same engine house are [fury3](https://github.com/sp00nznet/fury3) and
+[hellbender](https://github.com/sp00nznet/hellbender).
 
-## Project Status: **P0 complete, P1 not started**
+## Status: alpha — boots to the title menu
 
-Reconnaissance only. Nothing has been lifted, and nothing builds or runs yet.
-What is here is the P0 write-up and `analysis/`. Every binary is 32-bit PE, so
-this goes through pcrecomp's 32-bit path (`disasm32` → `lift32` →
-`runtime/recomp32/`), not the x86-64 one.
+`Monster.exe` is lifted whole (22,279 functions, 0 lift errors, 2.46M lines of
+C) and runs on pcrecomp's `native32` host. It plays both intro videos and
+reaches the title menu. Nothing past the title menu has been tried: no race,
+no 3D renderer yet.
 
----
+| Milestone | State |
+|---|---|
+| Catalog + lift, 0 errors | done |
+| Boots: CRT, WinMain, window, `.pod` mounts, `monster.ini` | done |
+| Smacker intro videos (MS logo, TRI logo) | done |
+| Title menu (MFC + GDI) | done |
+| Menus past the title | not tried |
+| A race: software renderer | not started |
+| Hardware renderers (`TRID3D.DLL`, Glide) | not started |
 
-## Why this one
+Needs pcrecomp [#81](https://github.com/sp00nznet/pcrecomp/pull/81) (thunk
+tables in `disasm32`); without it the run faults on the first call through a
+thunk the catalog missed.
 
-Terminal Reality's engine is already the most thoroughly measured thing in the
-collection. Fury³ (1995) and Hellbender (1996) are the same engine twice, and
-the toolkit's own notes say why that mattered: *anything that works on Fury³
-and fails on Hellbender is a tool bug, not a game quirk*. That pair settled the
-carry-flag model in `lift32.py` by measurement.
+## Screenshots
 
-Monster Truck Madness 2 is the same engine a third time, two years on, and it
-ships the renderer as separate named DLLs instead of linking it in:
+From a headless recording (`--headless --record`):
 
-- `VOXRT24.DLL` (248 KB, built 1997-08-13) — the voxel runtime, the direct
-  descendant of what is statically linked inside Fury³ and Hellbender
-- `TRID3D.DLL` (81 KB) — **T**erminal **R**eality **I**nteractive Direct3D
+| Intro | Title menu |
+|---|---|
+| ![intro](docs/img/intro.png) | ![title](docs/img/title.png) |
 
-So the part of the engine that Fury³ forced the lifter to get right is here as
-a standalone 248 KB DLL with an 8-function export table. That is a far better
-regression target than a 1.9 MB game binary with the renderer buried in it.
+## Getting Started
 
-`nocturne` (1999) is the fourth Terminal Reality generation and is already in
-the collection, which makes this family: 1995, 1996, 1998, 1999.
+You need your own Monster Truck Madness 2 disc or an ISO of it. Nothing from
+the game is in this repo, and nothing is downloaded.
 
----
+### Step by step
 
-## What P0 found
+Prerequisites: Windows 10/11, Python 3.10+ with `capstone` (`py -3 -m pip
+install capstone`), Visual Studio 2022 or its Build Tools with the C++ x86
+tools, CMake 3.20+, Ninja, and `ffmpeg` on PATH for `--record`.
 
-| Binary | Size | `.text` | Linker | Built | Imports |
-|--------|-----:|--------:|--------|-------|---------|
-| `Monster.exe` (MTM2) | 2,925,568 | 2,119,125 | 3.10 | 1998-07-14 | DDRAW, D3D via TRID3D, DSOUND, DINPUT, DPLAYX, SMACKW32, MSACM32 |
-| `VOXRT24.DLL` | 248,080 | — | 5.0 | 1997-08-13 | MSVCRT, KERNEL32 (8 exports) |
-| `TRID3D.DLL` | 80,896 | — | 3.10 | 1998-03-25 | KERNEL32, USER32, DDRAW (27 exports) |
+1. Clone this repo and pcrecomp side by side, pcrecomp on a commit that has
+   #81:
+   ```
+   git clone https://github.com/sp00nznet/mtm
+   git clone https://github.com/sp00nznet/pcrecomp
+   ```
+2. Copy the game off your disc into `game\`:
+   ```
+   py -3 tools\gamefiles.py "Monster Truck Madness 2.iso"
+   ```
+   It prints `85 files in ...\game`.
+3. Catalog and lift (about 2 and 1 minutes):
+   ```
+   py -3 tools\catalog.py
+   py -3 run_lift.py
+   ```
+   The lift ends with `lifted 22279   errors 0`.
+4. Build: `build.cmd` (MSVC x86 + Ninja) gives `build\mtm.exe`.
+5. Run it headless with a recording:
+   ```
+   build\mtm.exe --run --headless --watchdog 80 --record out.mp4
+   ```
 
-**No DRM, no packer, no protection of any kind.** Entropy 4.13–4.97 across
-every section — this is plain, unobfuscated 1998 code.
+Use `py` rather than `python`: the Microsoft Store alias answers `python` and
+does nothing. A Quick start (`Setup.cmd`) is not written yet; see
+[ROADMAP.md](ROADMAP.md).
 
-Two things worth noting for P1:
-
-- **The CRT is statically linked.** `Monster.exe` imports no `MSVCRT.dll`,
-  which means the CRT startup and every library call is inside the 2.1 MB of
-  `.text` and has to be classified out before the game code is visible.
-  `tools/classify/` exists for exactly this — it is what proved 78% of Gunman
-  Chronicles was SDK.
-- **`.data` has a 7 MB virtual size against 128 KB on disk.** A 6.9 MB
-  zero-filled BSS. Nocturne is the reason `image_loader.c` clamps its section
-  copy; this is the shape of binary that found that bug, so the clamp will get
-  a second workout here.
-- The debug directory is present but stripped — three entries, all type 0 with
-  null pointers. No CodeView, no COFF symbols. Do not go looking.
-
-`Monster.ex_` on the disc is not compressed despite the name — it is a plain
-PE. It is only the Microsoft ACME installer's naming convention.
-
-Monster Truck Madness 1 (1996) ships through the ACME setup (`ACMSETUP.EXE` +
-compressed cabinets) and has not been unpacked yet.
-
----
-
-## Where it goes next (P1)
-
-1. `tools/disasm/disasm32.py` over `VOXRT24.DLL` first. Small, self-contained, and
-   directly comparable against the voxel code already lifted in `fury3`.
-2. Classify the CRT out of `Monster.exe` before disassembling it.
-3. Unpack MTM1's ACME cabinets and check whether its renderer is a separate DLL
-   too, or still linked in like Fury³'s.
-
----
-
-## Layout
+## Usage
 
 ```
-mtm/
-  original/   both discs (MTM2 .iso, MTM1 .bin/.cue and the .iso from it)
-  game/       extracted binaries
-  analysis/   P0 output
-  docs/
+mtm [--run] [--headless] [--record out.mp4] [--frames N] [--shot N:file.bmp]
+    [--key NAME@MS[+HOLD]] [--click X,Y@MS] [--game game] [--watchdog S]
+    [--native-trace] [--callbacks] [--ddraw-trace]
 ```
 
-## Credits
+Without `--run` it only maps and binds the image (a dry run). `--headless`
+draws nothing on screen; `--record` pipes frames to ffmpeg at 30 fps.
 
-Monster Truck Madness © 1996 and Monster Truck Madness 2 © 1998, Microsoft /
-Terminal Reality. This project neither contains nor distributes any part of
-them.
+## Building from source
 
-The code and documentation here are MIT; [LICENSE](LICENSE) spells out that
+`build.cmd` builds locally. Day to day the build runs on the
+[recomp-netlab](https://github.com/sp00nznet/recomp-netlab) farm with
+`netlab build mtm` (recipe `projects/mtm.env`).
+
+[docs/architecture.md](docs/architecture.md) has the pipeline and what the
+host changes about the game's world.
+
+## What is not in this repo
+
+The game, its data and anything derived from its binary: the function
+catalog, the lifted C (`src/recomp/gen/`) and run logs are generated
+locally into gitignored folders and never committed.
+
+## License
+
+The code and documentation here are MIT. [LICENSE](LICENSE) spells out that
 the grant stops at our own work and does not reach the game or anything
-lifted from it.
+lifted from it. Monster Truck Madness © 1996 and Monster Truck Madness 2 ©
+1998, Microsoft / Terminal Reality.

@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+build-*/
 out/
 cmake-build-*/
 *.obj
@@ -66,3 +67,8 @@ Desktop.ini
 src/recomp/
 src/seg*.c
 RecompiledFuncs/
+
+# Run output: logs, recordings, screenshots of the game
+scratch/
+*.mp4
+*.bmp
