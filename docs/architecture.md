@@ -60,6 +60,11 @@ What the host changes about the game's world (`src/runtime/host.c`, `ddraw.c`):
   cloaked headless window that loses focus constantly, the real desktop
   flipped modes over and over. The host's `GetProcAddress` hands back a stub
   that logs `[display] ... not applied`.
+  The race's full screen is the same call: with `autoFullScreen=1` the race
+  starts in the game's "full screen" mode, `ChangeDisplaySettingsA` to
+  640x480 and a window over the whole desktop. Refused, the window stays
+  640x480, and the game, finding the desktop wider than 640, keeps offering
+  F4 (the frame's accelerator for command 32787, which does reach it).
 - **The front end is GDI**, and so is the race in its default windowed mode
   (a DIB section `StretchBlt` to the window). DirectDraw only carries the
   intro videos. Recording reads the window back with `PrintWindow`, which

@@ -557,6 +557,7 @@ static HRESULT WINAPI dd_QueryInterface(IDirectDraw* p, REFIID r, void** o) {
 static ULONG WINAPI dd_AddRef(IDirectDraw* p) { return InterlockedIncrement(&((DDraw*)p)->ref); }
 static ULONG WINAPI dd_Release(IDirectDraw* p) {
     LONG n = InterlockedDecrement(&((DDraw*)p)->ref);
+    TRACE("DirectDraw::Release -> %ld\n", n);
     if (!n) free(p);
     return n;
 }
@@ -596,6 +597,7 @@ static HRESULT WINAPI dd_DuplicateSurface(IDirectDraw* p, IDirectDrawSurface* s,
 static HRESULT WINAPI dd_EnumDisplayModes(IDirectDraw* p, DWORD f, DDSURFACEDESC* d, void* c, LPDDENUMMODESCALLBACK cb) {
     static const int modes[][3] = { { 640, 480, 8 }, { 640, 480, 16 } };
     (void)p; (void)f; (void)d;
+    TRACE("EnumDisplayModes\n");
     for (int i = 0; i < 2; i++) {
         DDSURFACEDESC m;
         memset(&m, 0, sizeof m);
@@ -615,6 +617,7 @@ static HRESULT WINAPI dd_GetCaps(IDirectDraw* p, DDCAPS* drv, DDCAPS* hel) {
     (void)p;
     /* A card from 1997 that can do what the game asks: blits, colour keys,
      * a palette, flipping. */
+    TRACE("GetCaps\n");
     DDCAPS* c[2] = { drv, hel };
     for (int i = 0; i < 2; i++) {
         if (!c[i]) continue;
@@ -632,6 +635,7 @@ static HRESULT WINAPI dd_GetCaps(IDirectDraw* p, DDCAPS* drv, DDCAPS* hel) {
 }
 static HRESULT WINAPI dd_GetDisplayMode(IDirectDraw* p, DDSURFACEDESC* d) {
     (void)p;
+    TRACE("GetDisplayMode\n");
     memset(d, 0, sizeof *d);
     d->dwSize = sizeof *d;
     d->dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PITCH | DDSD_PIXELFORMAT;
