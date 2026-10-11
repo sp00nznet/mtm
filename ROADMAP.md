@@ -1,8 +1,11 @@
 # Roadmap
 
 ## Next
-- Menus past the title screen, driven with `--click` / `--key`.
-- A race on the software renderer.
+- Drive a race: steering and throttle through `--key`, and the game's
+  DirectInput keyboard.
+- The garbled text strip along the bottom of the race screen.
+- The dialog is drawn over the main window but not at its real position.
+- F4 full screen: the host's DirectDraw, as for the videos.
 - `Setup.cmd` Quick start (REPO_RULES section 5), the same steps as the README's Step by step.
 - A conformance harness: milestones (intro, title menu, race start) checked from a headless run.
 

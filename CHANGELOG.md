@@ -10,7 +10,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
   and reaches the title menu. Needs pcrecomp #81.
 - `tools/gamefiles.py` (game files off the disc or ISO), `tools/catalog.py`,
   `run_lift.py`, the host (`src/runtime/`), and a netlab recipe (`projects/mtm.env`).
-- Headless recording of the GDI front end, read back with `PrintWindow`.
+- Headless recording of the GDI front end and the windowed race, read back
+  with `PrintWindow` while the UI thread is idle, with the active dialog drawn
+  over it.
+- Headless runs cloak every top-level window (the front end's dialogs too),
+  and `--key`/`--click` reach a modal dialog and the MFC child controls under
+  the point. With these, a scripted run reaches a race on the software
+  renderer.
 
 ### Fixed
 - The game's `ChangeDisplaySettingsA`, fetched with `GetProcAddress`, no

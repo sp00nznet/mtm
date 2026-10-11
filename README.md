@@ -9,12 +9,13 @@ Part of the pcrecomp collection and its shared house style; siblings from the
 same engine house are [fury3](https://github.com/sp00nznet/fury3) and
 [hellbender](https://github.com/sp00nznet/hellbender).
 
-## Status: alpha — boots to the title menu
+## Status: alpha — a race starts
 
 `Monster.exe` is lifted whole (22,279 functions, 0 lift errors, 2.46M lines of
-C) and runs on pcrecomp's `native32` host. It plays both intro videos and
-reaches the title menu. Nothing past the title menu has been tried: no race,
-no 3D renderer yet.
+C) and runs on pcrecomp's `native32` host. It plays both intro videos, goes
+through the title menu and Driver Check-in, and starts a race on the
+software renderer, windowed: the track, the cockpit and the race clock run.
+Driving it has not been tried yet.
 
 | Milestone | State |
 |---|---|
@@ -22,8 +23,9 @@ no 3D renderer yet.
 | Boots: CRT, WinMain, window, `.pod` mounts, `monster.ini` | done |
 | Smacker intro videos (MS logo, TRI logo) | done |
 | Title menu (MFC + GDI) | done |
-| Menus past the title | not tried |
-| A race: software renderer | not started |
+| Driver Check-in (3D truck preview), GO, "Before You Begin" | done |
+| A race on the software renderer (windowed, GDI) | starts; not driven yet |
+| Text strip along the bottom of the race screen | garbled |
 | Hardware renderers (`TRID3D.DLL`, Glide) | not started |
 
 Needs pcrecomp [#81](https://github.com/sp00nznet/pcrecomp/pull/81) (thunk
@@ -37,6 +39,8 @@ From a headless recording (`--headless --record`):
 | Intro | Title menu |
 |---|---|
 | ![intro](docs/img/intro.png) | ![title](docs/img/title.png) |
+| **Driver Check-in** | **Race (Bear Foot, cockpit view)** |
+| ![check-in](docs/img/checkin.png) | ![race](docs/img/race.png) |
 
 ## Getting Started
 
@@ -67,9 +71,10 @@ tools, CMake 3.20+, Ninja, and `ffmpeg` on PATH for `--record`.
    ```
    The lift ends with `lifted 22279   errors 0`.
 4. Build: `build.cmd` (MSVC x86 + Ninja) gives `build\mtm.exe`.
-5. Run it headless with a recording:
+5. Run it headless with a recording. This clicks Driver Check-in, then GO,
+   then ENTER for "Before You Begin", and the race starts at about 80 s:
    ```
-   build\mtm.exe --run --headless --watchdog 80 --record out.mp4
+   build\mtm.exe --run --headless --watchdog 120 --record out.mp4 --click 560,433@60000 --click 570,430@68000 --key ENTER@78000
    ```
 
 Use `py` rather than `python`: the Microsoft Store alias answers `python` and

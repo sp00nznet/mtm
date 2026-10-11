@@ -26,6 +26,7 @@ void ddh_finish(void);           /* close the recording; safe to call twice */
 HWND ddh_window(void);           /* the game's window, once it exists */
 int  ddh_focused(void);          /* the real keyboard is meant for the game */
 long ddh_frames(void);
+void ddh_ui_idle(int idle);      /* the UI thread is (not) idle: the GDI front end may be read back */
 
 void ddh_shim_DirectDrawCreate(void);
 void ddh_shim_CreateWindowExA(void);

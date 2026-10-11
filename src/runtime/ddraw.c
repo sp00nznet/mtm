@@ -184,11 +184,17 @@ static void diff_tick(void) {
 /* Monster Truck Madness 2's front end is MFC drawing with GDI into the
  * window, not DirectDraw: between DirectDraw presents (the videos, the race)
  * the picture is the window's own, read back with PrintWindow, which works on
- * the cloaked headless window too. */
+ * the cloaked headless window too. Only while the UI thread is idle
+ * (ddh_ui_idle, from host.c's GetMessageA / PeekMessageA): read at any other
+ * moment it caught the menu between erasing its controls and repainting
+ * them. And only from this thread: PrintWindow on the UI thread, inside a
+ * message sent from another thread, never returned. */
+static volatile LONG g_ui_idle;
+void ddh_ui_idle(int idle) { g_ui_idle = idle; }
 static void shadow_from_window(void) {
     static HDC mem;
     static uint32_t* px;
-    if (!g_wnd || GetTickCount() - g_last_present < 250) return;
+    if (!g_ui_idle || !g_wnd || GetTickCount() - g_last_present < 250) return;
     if (!mem) {
         BITMAPINFO bi = { { sizeof(BITMAPINFOHEADER), VW, -VH, 1, 32, BI_RGB } };
         HBITMAP dib = CreateDIBSection(NULL, &bi, DIB_RGB_COLORS, (void**)&px, NULL, 0);
@@ -196,6 +202,23 @@ static void shadow_from_window(void) {
         SelectObject(mem, dib);
     }
     if (!PrintWindow(g_wnd, mem, PW_CLIENTONLY | PW_RENDERFULLCONTENT)) return;
+    /* A modal dialog is its own window: drawn over the main one where it sits. */
+    HWND pop = GetLastActivePopup(g_wnd);
+    RECT pr;
+    if (pop != g_wnd && IsWindowVisible(pop) && GetWindowRect(pop, &pr)) {
+        int w = pr.right - pr.left, h = pr.bottom - pr.top;
+        POINT at = { pr.left, pr.top };
+        ScreenToClient(g_wnd, &at);
+        HDC pdc = CreateCompatibleDC(NULL), sdc = GetDC(NULL);
+        HBITMAP pb = CreateCompatibleBitmap(sdc, w, h);
+        HGDIOBJ old = SelectObject(pdc, pb);
+        if (PrintWindow(pop, pdc, PW_RENDERFULLCONTENT)) BitBlt(mem, at.x, at.y, w, h, pdc, 0, 0, SRCCOPY);
+        SelectObject(pdc, old);
+        DeleteObject(pb);
+        DeleteDC(pdc);
+        ReleaseDC(NULL, sdc);
+    }
+    if (!g_ui_idle) return;
     EnterCriticalSection(&g_lock);
     memcpy(g_shadow, px, sizeof g_shadow);
     LeaveCriticalSection(&g_lock);
@@ -206,7 +229,7 @@ static void shadow_from_window(void) {
 static DWORD WINAPI clock_thread(LPVOID unused) {
     (void)unused;
     for (;;) {
-        Sleep(50);
+        Sleep(33);
         shadow_from_window();
         record_tick();
         diff_tick();
@@ -744,9 +767,23 @@ HWND ddh_window(void) { return g_wnd; }
 int  ddh_focused(void) { return g_wnd && GetForegroundWindow() == g_wnd; }
 long ddh_frames(void) { return g_frames; }
 
+/* Headless, every top-level window the game makes is cloaked, not only its
+ * main one: the front end's dialogs ("Before You Begin" after GO) are
+ * windows of their own, made by CreateDialogIndirectParamA, which the
+ * CreateWindowExA shim never sees. A CBT hook on the game's thread catches
+ * them all as they are created. */
+static LRESULT CALLBACK cloak_hook(int code, WPARAM w, LPARAM l) {
+    if (code == HCBT_CREATEWND && !(((CBT_CREATEWNDA*)l)->lpcs->style & WS_CHILD)) {
+        BOOL on = TRUE;
+        DwmSetWindowAttribute((HWND)w, DWMWA_CLOAK, &on, sizeof on);
+    }
+    return CallNextHookEx(NULL, code, w, l);
+}
+
 void ddh_init(const ddh_opts_t* o) {
     g_o = *o;
     InitializeCriticalSection(&g_lock);
+    if (o->headless) SetWindowsHookExA(WH_CBT, cloak_hook, NULL, GetCurrentThreadId());
     if (!o->headless) {
         /* mtm.ini lives beside the exe: settings belong to
          * this build of the host, not to the game folder (Hover!'s rule). */

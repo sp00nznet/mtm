@@ -117,13 +117,22 @@ static DWORD WINAPI input_thread(LPVOID p) {
     int i = (int)(intptr_t)p;
     DWORD t0 = GetTickCount();
     while (!ddh_window() || GetTickCount() - t0 < g_in[i].at) Sleep(5);
-    HWND w = ddh_window();
+    /* A modal dialog up (GO's "Before You Begin") takes the input: clicks
+     * stay in main-window coordinates and are mapped onto it. */
+    HWND w = ddh_window(), pop = GetLastActivePopup(w);
     int vk = g_in[i].vk;
     if (g_in[i].x >= 0) {
         int cx = g_in[i].x, cy = g_in[i].y;
         present_unmap(&cx, &cy);            /* the presenter maps it back to X,Y */
-        LPARAM xy = MAKELPARAM(cx, cy);
-        fprintf(stderr, "[input] click %d,%d at %lu ms\n", g_in[i].x, g_in[i].y, GetTickCount() - t0);
+        /* The front end's buttons are MFC child windows: the click goes to
+         * the deepest child under the point, in its own coordinates. */
+        POINT pt = { cx, cy };
+        if (pop != w) { MapWindowPoints(w, pop, &pt, 1); w = pop; }
+        for (HWND c; (c = RealChildWindowFromPoint(w, pt)) && c != w; w = c)
+            MapWindowPoints(w, c, &pt, 1);
+        LPARAM xy = MAKELPARAM(pt.x, pt.y);
+        fprintf(stderr, "[input] click %d,%d at %lu ms -> hwnd %p at %ld,%ld\n", g_in[i].x, g_in[i].y,
+                GetTickCount() - t0, (void*)w, pt.x, pt.y);
         PostMessageA(w, WM_MOUSEMOVE, 0, xy);
         Sleep(30);
         InterlockedIncrement(&g_held[VK_LBUTTON]);
@@ -133,6 +142,7 @@ static DWORD WINAPI input_thread(LPVOID p) {
         PostMessageA(w, WM_LBUTTONUP, 0, xy);
         return 0;
     }
+    w = pop;                                /* IsDialogMessage turns ENTER into the default button */
     fprintf(stderr, "[input] key 0x%02X down at %lu ms\n", vk, GetTickCount() - t0);
     InterlockedIncrement(&g_held[vk]);
     PostMessageA(w, WM_KEYDOWN, vk, 1);
@@ -174,6 +184,35 @@ static void shim_GetProcAddress(void) {
         return;
     }
     RET((uintptr_t)GetProcAddress((HMODULE)(uintptr_t)ARG(0), (LPCSTR)(uintptr_t)name), 2);
+}
+
+/* The front end idles in GetMessageA, and loading and racing poll with
+ * PeekMessageA. Either with nothing in the queue means every control has
+ * repainted, so --record may read the window back then (ddraw.c). These are
+ * native functions in the guest's IAT, not shims: the bridge calls them like
+ * any import and releases the machine lock while they block, so the mixer
+ * thread keeps running. */
+static BOOL WINAPI host_GetMessageA(MSG* m, HWND h, UINT lo, UINT hi) {
+    ddh_ui_idle(!HIWORD(GetQueueStatus(QS_ALLINPUT)));
+    BOOL got = GetMessageA(m, h, lo, hi);
+    ddh_ui_idle(0);
+    return got;
+}
+static BOOL WINAPI host_PeekMessageA(MSG* m, HWND h, UINT lo, UINT hi, UINT rm) {
+    BOOL got = PeekMessageA(m, h, lo, hi, rm);
+    ddh_ui_idle(!got);
+    return got;
+}
+
+/* Point every IAT slot of the image at base that holds `real` at `repl`. */
+static int patch_iat(uint32_t base, void* real, void* repl) {
+    IMAGE_NT_HEADERS* nt = (IMAGE_NT_HEADERS*)(uintptr_t)(base + ((IMAGE_DOS_HEADER*)(uintptr_t)base)->e_lfanew);
+    IMAGE_DATA_DIRECTORY d = nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT];
+    uint32_t* slot = (uint32_t*)(uintptr_t)(base + d.VirtualAddress);
+    int n = 0;
+    for (DWORD i = 0; i < d.Size / 4; i++)
+        if (slot[i] == (uint32_t)(uintptr_t)real) { slot[i] = (uint32_t)(uintptr_t)repl; n++; }
+    return n;
 }
 
 static native32_shim_t g_shims[] = {
@@ -250,6 +289,7 @@ static DWORD WINAPI watchdog(LPVOID unused) {
     fprintf(stderr, "\n[watchdog] %lu s: in sub_%08X, last native call %s, %u indirect calls, %ld frames\n",
             g_watchdog_s, g_cur_func, g_cur_import, g_icall_count, ddh_frames());
     native32_dump_icalls(8);
+    recomp_dump_trace("watchdog");          /* with -DMTM_TRACE=ON: the last function entries */
     ddh_finish();
     fflush(stderr);
     TerminateProcess(GetCurrentProcess(), 4);
@@ -324,6 +364,9 @@ int main(int argc, char** argv) {
     printf("  mapped Monster.exe: 0x%08X-0x%08X\n", MTM_BASE, MTM_BASE + span);
     int nshims = (int)(sizeof g_shims / sizeof g_shims[0]) - !g_headless;
     if (native32_bind(MTM_BASE, g_shims, nshims) != 0) return 1;
+    if (!patch_iat(MTM_BASE, (void*)GetProcAddress(GetModuleHandleA("user32.dll"), "GetMessageA"), host_GetMessageA))
+        fprintf(stderr, "[bind] GetMessageA not in the IAT: the menu will not reach --record\n");
+    patch_iat(MTM_BASE, (void*)GetProcAddress(GetModuleHandleA("user32.dll"), "PeekMessageA"), host_PeekMessageA);
     if (!run) {
         printf("\n(dry run: image mapped and bound; --run enters 0x%08X)\n", mtm_entry_va);
         return 0;

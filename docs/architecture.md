@@ -60,7 +60,19 @@ What the host changes about the game's world (`src/runtime/host.c`, `ddraw.c`):
   cloaked headless window that loses focus constantly, the real desktop
   flipped modes over and over. The host's `GetProcAddress` hands back a stub
   that logs `[display] ... not applied`.
-- **The front end is GDI**, not DirectDraw. Between DirectDraw presents,
-  recording reads the window back with `PrintWindow`, which works on the
-  cloaked headless window too. That is how the title menu reaches `--record`.
+- **The front end is GDI**, and so is the race in its default windowed mode
+  (a DIB section `StretchBlt` to the window). DirectDraw only carries the
+  intro videos. Recording reads the window back with `PrintWindow`, which
+  works on a cloaked window too, from the recorder's own thread, and only
+  while the UI thread is idle. The host puts its own `GetMessageA` and
+  `PeekMessageA` in the guest's IAT to know when that is: with an empty
+  queue every control has repainted. Read at any other moment, it caught the
+  menu between erasing its controls and repainting them. Called on the UI
+  thread, inside a message sent from another thread, `PrintWindow` never
+  returned.
+- **Every top-level window is cloaked when headless.** GO opens a modal MFC
+  dialog ("Before You Begin"), made with `CreateDialogIndirectParamA`, which
+  the `CreateWindowExA` shim never sees. A CBT hook on the game thread cloaks
+  each one as it is created. The recorder draws the active popup over the
+  main window, and `--key`/`--click` go to it.
 - `smackw32.dll` and DirectSound run natively through the bridge.
