@@ -9,13 +9,14 @@ Part of the pcrecomp collection and its shared house style; siblings from the
 same engine house are [fury3](https://github.com/sp00nznet/fury3) and
 [hellbender](https://github.com/sp00nznet/hellbender).
 
-## Status: alpha — a race starts
+## Status: alpha — a race drives
 
 `Monster.exe` is lifted whole (22,279 functions, 0 lift errors, 2.46M lines of
 C) and runs on pcrecomp's `native32` host. It plays both intro videos, goes
 through the title menu and Driver Check-in, and starts a race on the
-software renderer, windowed: the track, the cockpit and the race clock run.
-Driving it has not been tried yet.
+software renderer, windowed, and the truck drives: throttle and steering by
+scripted keys, through the gears and down the track. A whole race has not been
+finished yet.
 
 | Milestone | State |
 |---|---|
@@ -24,7 +25,7 @@ Driving it has not been tried yet.
 | Smacker intro videos (MS logo, TRI logo) | done |
 | Title menu (MFC + GDI) | done |
 | Driver Check-in (3D truck preview), GO, "Before You Begin" | done |
-| A race on the software renderer (windowed, GDI) | starts; not driven yet |
+| A race on the software renderer (windowed, GDI) | drives; not finished yet |
 | Text strip along the bottom of the race screen | garbled |
 | Hardware renderers (`TRID3D.DLL`, Glide) | not started |
 
@@ -39,7 +40,7 @@ From a headless recording (`--headless --record`):
 | Intro | Title menu |
 |---|---|
 | ![intro](docs/img/intro.png) | ![title](docs/img/title.png) |
-| **Driver Check-in** | **Race (Bear Foot, cockpit view)** |
+| **Driver Check-in** | **Racing (cockpit view, third gear)** |
 | ![check-in](docs/img/checkin.png) | ![race](docs/img/race.png) |
 
 ## Getting Started
@@ -72,9 +73,10 @@ tools, CMake 3.20+, Ninja, and `ffmpeg` on PATH for `--record`.
    The lift ends with `lifted 22279   errors 0`.
 4. Build: `build.cmd` (MSVC x86 + Ninja) gives `build\mtm.exe`.
 5. Run it headless with a recording. This clicks Driver Check-in, then GO,
-   then ENTER for "Before You Begin", and the race starts at about 80 s:
+   then ENTER for "Before You Begin"; the race starts at about 80 s, and UP
+   holds the throttle from 85 s:
    ```
-   build\mtm.exe --run --headless --watchdog 120 --record out.mp4 --click 560,433@60000 --click 570,430@68000 --key ENTER@78000
+   build\mtm.exe --run --headless --watchdog 125 --record out.mp4 --click 560,433@60000 --click 570,430@68000 --key ENTER@78000 --key UP@85000+38000
    ```
 
 Use `py` rather than `python`: the Microsoft Store alias answers `python` and

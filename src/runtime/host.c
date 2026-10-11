@@ -73,10 +73,10 @@ static void shim_MessageBoxA(void) {
 /* ------------------------------------------------------------ input */
 
 /* --key NAME@MS[+HOLD] and --click X,Y@MS: scripted input, in milliseconds
- * from entry. The game reads keys through GetAsyncKeyState and the mouse
- * through window messages, so a scripted key is held for GetAsyncKeyState
- * and posted; a click is posted as a button down and up at a 640x480
- * position. Headless, the real keyboard is not read at all. */
+ * from entry. The game reads keys through window messages and GetKeyState
+ * (DirectInput is created but no device on it), so a scripted key is held
+ * for GetKeyState and posted to the focus window; a click is posted as a
+ * button down and up at a 640x480 position. Headless, the real keyboard is not read at all. */
 #define MAX_INPUT 64
 static struct { int vk, x, y; DWORD at, hold; } g_in[MAX_INPUT];
 static int g_nin;
@@ -142,8 +142,12 @@ static DWORD WINAPI input_thread(LPVOID p) {
         PostMessageA(w, WM_LBUTTONUP, 0, xy);
         return 0;
     }
-    w = pop;                                /* IsDialogMessage turns ENTER into the default button */
-    fprintf(stderr, "[input] key 0x%02X down at %lu ms\n", vk, GetTickCount() - t0);
+    /* Keys go where real ones would: the game thread's focus window (the
+     * race's view, not the MDI frame), else the popup. In a dialog,
+     * IsDialogMessage turns ENTER into the default button. */
+    GUITHREADINFO gi = { sizeof gi };
+    w = GetGUIThreadInfo(GetWindowThreadProcessId(pop, NULL), &gi) && gi.hwndFocus ? gi.hwndFocus : pop;
+    fprintf(stderr, "[input] key 0x%02X down at %lu ms -> hwnd %p\n", vk, GetTickCount() - t0, (void*)w);
     InterlockedIncrement(&g_held[vk]);
     PostMessageA(w, WM_KEYDOWN, vk, 1);
     Sleep(g_in[i].hold);
@@ -151,9 +155,9 @@ static DWORD WINAPI input_thread(LPVOID p) {
     PostMessageA(w, WM_KEYUP, vk, 0xC0000001u);
     return 0;
 }
-static void shim_GetAsyncKeyState(void) {
+static void shim_GetKeyState(void) {
     int vk = ARG(0) & 0xFF;
-    SHORT s = g_held[vk] ? (SHORT)0x8001 : (!g_headless && ddh_focused()) ? GetAsyncKeyState(vk) : 0;
+    SHORT s = g_held[vk] ? (SHORT)0x8000 : g_headless ? 0 : GetKeyState(vk);
     RET((uint16_t)s, 1);
 }
 
@@ -220,7 +224,7 @@ static native32_shim_t g_shims[] = {
     { "GetModuleHandleA", shim_GetModuleHandleA },
     { "GetModuleFileNameA", shim_GetModuleFileNameA },
     { "GetCommandLineA", shim_GetCommandLineA },
-    { "GetAsyncKeyState", shim_GetAsyncKeyState },
+    { "GetKeyState", shim_GetKeyState },
     { "ExitProcess", shim_ExitProcess },
     DDH_SHIMS,
     { "MessageBoxA", shim_MessageBoxA },          /* headless only: the last entry */

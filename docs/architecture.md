@@ -74,5 +74,11 @@ What the host changes about the game's world (`src/runtime/host.c`, `ddraw.c`):
   dialog ("Before You Begin"), made with `CreateDialogIndirectParamA`, which
   the `CreateWindowExA` shim never sees. A CBT hook on the game thread cloaks
   each one as it is created. The recorder draws the active popup over the
-  main window, and `--key`/`--click` go to it.
+  main window, and `--click` goes to it.
+- **Keys go to the focus window.** The race is a view inside an MDI frame,
+  and reads its keys from window messages: posted to the frame they did
+  nothing. `--key` posts to the game thread's focus window
+  (`GetGUIThreadInfo`), which is the race's view, or a dialog's control, as
+  a real key would be. `GetKeyState` sees the keys `--key` holds.
+  DirectInput is created, but no device is made on it.
 - `smackw32.dll` and DirectSound run natively through the bridge.

@@ -17,6 +17,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
   and `--key`/`--click` reach a modal dialog and the MFC child controls under
   the point. With these, a scripted run reaches a race on the software
   renderer.
+- The race can be driven with `--key`: keys go to the game thread's focus
+  window (the race's view inside the MDI frame), as real keys do, and
+  `GetKeyState` sees the keys `--key` holds.
 
 ### Fixed
 - The game's `ChangeDisplaySettingsA`, fetched with `GetProcAddress`, no
