@@ -73,8 +73,10 @@ What the host changes about the game's world (`src/runtime/host.c`, `ddraw.c`):
 - **Every top-level window is cloaked when headless.** GO opens a modal MFC
   dialog ("Before You Begin"), made with `CreateDialogIndirectParamA`, which
   the `CreateWindowExA` shim never sees. A CBT hook on the game thread cloaks
-  each one as it is created. The recorder draws the active popup over the
-  main window, and `--click` goes to it.
+  each one as it is created. MFC centres such a dialog on the desktop rather
+  than on the cloaked main window, so it opened on another monitor; when it
+  activates off the main window the hook centres it there. The recorder
+  draws the active popup over the main window, and `--click` goes to it.
 - **Keys go to the focus window.** The race is a view inside an MDI frame,
   and reads its keys from window messages: posted to the frame they did
   nothing. `--key` posts to the game thread's focus window

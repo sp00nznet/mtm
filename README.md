@@ -26,7 +26,6 @@ finished yet.
 | Title menu (MFC + GDI) | done |
 | Driver Check-in (3D truck preview), GO, "Before You Begin" | done |
 | A race on the software renderer (windowed, GDI) | drives; not finished yet |
-| Text strip along the bottom of the race screen | garbled |
 | Hardware renderers (`TRID3D.DLL`, Glide) | not started |
 
 Needs pcrecomp [#81](https://github.com/sp00nznet/pcrecomp/pull/81) (thunk

@@ -22,6 +22,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
   `GetKeyState` sees the keys `--key` holds.
 
 ### Fixed
+- Headless, a dialog that opens off the main window ("Before You Begin" opened
+  on another monitor) is centred on it, so the recording shows it where it
+  belongs.
 - The game's `ChangeDisplaySettingsA`, fetched with `GetProcAddress`, no
   longer changes the real desktop's mode. It was switching it over and over
   during headless runs.

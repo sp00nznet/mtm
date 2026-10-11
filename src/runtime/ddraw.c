@@ -777,6 +777,14 @@ static LRESULT CALLBACK cloak_hook(int code, WPARAM w, LPARAM l) {
         BOOL on = TRUE;
         DwmSetWindowAttribute((HWND)w, DWMWA_CLOAK, &on, sizeof on);
     }
+    /* MFC centres a dialog on the desktop, not on its owner, which it takes
+     * for unavailable: it opened on another monitor than the cloaked main
+     * window. One that is not over the main window is centred on it. */
+    RECT d, m, x;
+    if (code == HCBT_ACTIVATE && (HWND)w != g_wnd && g_wnd && GetWindowRect((HWND)w, &d) &&
+        GetWindowRect(g_wnd, &m) && !IntersectRect(&x, &d, &m))
+        SetWindowPos((HWND)w, NULL, (m.left + m.right - (d.right - d.left)) / 2,
+                     (m.top + m.bottom - (d.bottom - d.top)) / 2, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
     return CallNextHookEx(NULL, code, w, l);
 }
 
